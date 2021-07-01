@@ -1,13 +1,10 @@
 package com.company;
 
-import java.io.IOException;
-
 public class Main
 {
-    public static void main(String[] args) throws IOException, InterruptedException
+    public static void main(String[] args)
     {
-        //Additional.executeUtil("lsmod");
-        //Additional.appendLog("Старт webSSH...");
+        Additional.appendLog("webSSH started");
         EndServer.craftServer();
     }
 }

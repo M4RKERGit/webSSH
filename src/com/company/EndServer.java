@@ -12,59 +12,44 @@ public class EndServer
     public static void craftServer()
     {
         try (ServerSocket serverSocket = new ServerSocket(80)) {
-            System.out.println("Server started!");
-            String request = "";
+            Additional.appendLog("Server started!");
+            String request = "", fullBuffer = "";
             while (true)
             {
                 Socket socket = serverSocket.accept();
-                //System.out.println("Client connected!");
+                Additional.appendLog("Client connected!");
                 try (BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                      PrintWriter output = new PrintWriter(socket.getOutputStream()))
                 {
                     while (!input.ready());
-                    if (input.ready())
-                    {
-                        request = input.readLine();
-                    }
+                    if (input.ready()) {request = input.readLine();}
+                    while (input.ready()) {fullBuffer += (input.readLine() + "\n");}
+                    System.out.println(fullBuffer);
                     parseRequest(request);
                     refreshHTML();
                     output.println(htmlCode);
-                    //System.out.println("Client disconnected!");
+                    Additional.appendLog("Client disconnected!");
                 }
             }
         }
-        catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        catch (IOException ex) {Additional.appendLog("Connection error");}
     }
 
-    private static void parseRequest(String req)
-    {
+    private static void parseRequest(String req) throws IOException {
         String[] parsed = req.split(" ");
-        //for (int i = 0; i < parsed.length; i++) {System.out.println("Строка:" + parsed[i]);}
         String mode = parsed[0];
-        String command = parsed[1];
+        String command = parsed[1].replaceAll("%20", " ");
         if (command.equals("/favicon.ico"))  return;
         switch (mode)
         {
             case "GET":
-                System.out.println("Получен запрос GET");
+                Additional.appendLog("Got GET Request");
                 break;
             case "POST":
-                System.out.println("Получен запрос POST с командой " + command);
-                try
-                {
-                    if (command.equals("/clear"))
-                    {
-                        browseText = "";
-                        return;
-                    }
-                    browseText += Additional.executeUtil(command.substring(1, command.length()));
-                }
-                catch (IOException | InterruptedException e)
-                {
-                    System.out.println("Ошибка ввода команды");
-                }
+                Additional.appendLog("Got POST request with " + command);
+                if (command.equals("/clear")) {browseText = ""; return;}
+                browseText += Additional.executeUtil(command.substring(1, command.length()));
+                Additional.appendLog("Invalid command");
                 break;
         }
     }
@@ -80,7 +65,7 @@ public class EndServer
                 "    <form>\n" +
                 "        <p><textarea style = \"width: 90%; height: 800px;\" name=\"message\">"+browseText+"</textarea></p>\n" +
                 "        <p><input style = \"width: 50%;\" id=\"txtLine\" type=\"txtLine\" name=\"txtLine\" value=\"\"></p>\n" +
-                "        <button onclick=\"sendCMD()\">Загрузить шото</button>\n" +
+                "        <button onclick=\"sendCMD()\">Send</button>\n" +
                 "    </form>\n" +
                 "    <script>\n" +
                 "        function sendCMD() \n" +
