@@ -7,35 +7,36 @@ import java.nio.charset.StandardCharsets;
 
 public class EndServer
 {
+    static String PRINT_PREFIX = " [SERV]: ";
     static String browseText = "Welcome to webSSH\n";
     static String htmlCode = "";
     public static void craftServer()
     {
         try (ServerSocket serverSocket = new ServerSocket(80)) {
-            Additional.appendLog("Server started!");
-            String request = "", fullBuffer = "";
+            Additional.appendLog("Server started!", PRINT_PREFIX);
+            String request = "";
             while (true)
             {
                 Socket socket = serverSocket.accept();
-                Additional.appendLog("Client connected!");
+                //Additional.appendLog("Client connected!", PRINT_PREFIX);
                 try (BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                      PrintWriter output = new PrintWriter(socket.getOutputStream()))
                 {
                     while (!input.ready());
                     if (input.ready()) {request = input.readLine();}
-                    while (input.ready()) {fullBuffer += (input.readLine() + "\n");}
-                    System.out.println(fullBuffer);
+                    Additional.appendLog(request, PRINT_PREFIX);
                     parseRequest(request);
-                    refreshHTML();
+                    htmlCode = HTMLCode.refreshHTML(browseText);
                     output.println(htmlCode);
-                    Additional.appendLog("Client disconnected!");
+                    //Additional.appendLog("Client disconnected!", PRINT_PREFIX);
                 }
             }
         }
-        catch (IOException ex) {Additional.appendLog("Connection error");}
+        catch (IOException ex) {Additional.appendLog("Connection error", PRINT_PREFIX);}
     }
 
-    private static void parseRequest(String req) throws IOException {
+    private static void parseRequest(String req)
+    {
         String[] parsed = req.split(" ");
         String mode = parsed[0];
         String command = parsed[1].replaceAll("%20", " ");
@@ -43,41 +44,13 @@ public class EndServer
         switch (mode)
         {
             case "GET":
-                Additional.appendLog("Got GET Request");
-                break;
+                Additional.appendLog("Got GET request", PRINT_PREFIX);
+                return;
             case "POST":
-                Additional.appendLog("Got POST request with " + command);
-                if (command.equals("/clear")) {browseText = ""; return;}
-                browseText += Additional.executeUtil(command.substring(1, command.length()));
-                Additional.appendLog("Invalid command");
+                Additional.appendLog("Got POST request with " + command, PRINT_PREFIX);
+                try {if (command.equals("/clear")) {browseText = "";return;} browseText += Additional.executeUtil(command.substring(1));}
+                catch (IOException e) {System.out.println("Invalid command");}
                 break;
         }
-    }
-
-    private static void refreshHTML()
-    {
-        htmlCode = "<!DOCTYPE HTML>\n" +
-                "<html>\n" +
-                "<head>\n" +
-                "  <meta charset=\"utf-8\">\n" +
-                "</head>\n" +
-                "<body>\n" +
-                "    <form>\n" +
-                "        <p><textarea style = \"width: 90%; height: 800px;\" name=\"message\">"+browseText+"</textarea></p>\n" +
-                "        <p><input style = \"width: 50%;\" id=\"txtLine\" type=\"txtLine\" name=\"txtLine\" value=\"\"></p>\n" +
-                "        <button onclick=\"sendCMD()\">Send</button>\n" +
-                "    </form>\n" +
-                "    <script>\n" +
-                "        function sendCMD() \n" +
-                "        {\n" +
-                "        var val = document.getElementById(\"txtLine\").value;\n" +
-                "        var xhr = new XMLHttpRequest();\n" +
-                "        xhr.open('POST', val, false);\n" +
-                "        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\n" +
-                "        xhr.send(val);\n" +
-                "        }\n" +
-                "    </script>\n" +
-                "</body>\n" +
-                "</html>";
     }
 }
