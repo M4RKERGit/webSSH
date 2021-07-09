@@ -10,6 +10,7 @@ public class EndServer
     static String PRINT_PREFIX = " [SERV]: ";
     static String browseText = "Welcome to webSSH\n";
     static String htmlCode = "";
+    static String userDir = "/";
     public static void craftServer()
     {
         try (ServerSocket serverSocket = new ServerSocket(80)) {
@@ -18,7 +19,6 @@ public class EndServer
             while (true)
             {
                 Socket socket = serverSocket.accept();
-                //Additional.appendLog("Client connected!", PRINT_PREFIX);
                 try (BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                      PrintWriter output = new PrintWriter(socket.getOutputStream()))
                 {
@@ -26,9 +26,8 @@ public class EndServer
                     if (input.ready()) {request = input.readLine();}
                     Additional.appendLog(request, PRINT_PREFIX);
                     parseRequest(request);
-                    htmlCode = HTMLCode.refreshHTML(browseText);
+                    htmlCode = HTMLCode.refreshHTML(browseText, userDir);
                     output.println(htmlCode);
-                    //Additional.appendLog("Client disconnected!", PRINT_PREFIX);
                 }
             }
         }
@@ -40,6 +39,7 @@ public class EndServer
         String[] parsed = req.split(" ");
         String mode = parsed[0];
         String command = parsed[1].replaceAll("%20", " ");
+        String[] parsCom = command.split(" ");
         if (command.equals("/favicon.ico"))  return;
         switch (mode)
         {
@@ -48,7 +48,12 @@ public class EndServer
                 return;
             case "POST":
                 Additional.appendLog("Got POST request with " + command, PRINT_PREFIX);
-                try {if (command.equals("/clear")) {browseText = "";return;} browseText += Additional.executeUtil(command.substring(1));}
+                try
+                {
+                    if (parsCom[0].equals("/clear")) {browseText = ""; return;}
+                    if (parsCom[0].equals("/cd")) {userDir = Additional.changeDir(userDir, parsCom[1]); return;}
+                    browseText += Additional.executeUtil(command.substring(1), userDir);
+                }
                 catch (IOException e) {System.out.println("Invalid command");}
                 break;
         }

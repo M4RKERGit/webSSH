@@ -2,8 +2,9 @@ package com.company;
 
 public class HTMLCode
 {
-    public static String refreshHTML(String browseText)
+    public static String refreshHTML(String browseText, String curDir)
     {
+        browseText += "\n\nExecution by root user, current directory: " + curDir;
         return  "<!DOCTYPE HTML>\n" +
                 "<html>\n" +
                 "<head>\n" +
